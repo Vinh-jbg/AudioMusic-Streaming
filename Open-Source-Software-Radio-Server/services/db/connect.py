@@ -64,6 +64,16 @@ class Store:
         cur.execute("SELECT * FROM tbl_radio ORDER BY id DESC LIMIT 1")
         result = cur.fetchone()
         return result
+    def update_music(self, id, name, image, path, artists):
+        conn = self.connect()
+        cur = conn.cursor()
+        cur.execute(
+        "UPDATE tbl_radio SET name = %s, image = %s, path = %s, artists = %s WHERE id = %s;",
+        (name, image, path, artists, id)
+    )
+        conn.commit()
+        print('Update Music Success !!!')
+        conn.close()
 
     # def data_retrieval(name):
     #     conn = sqlite3.connect('Client_data.db')
@@ -96,5 +106,5 @@ class Store:
     # def delete_table(self, name):
     #     conn = sqlite3.connect('Radio.db')
     #     conn.execute('DROP TABLE tbl_radio;')
-    #     conn.commit()
+    #     conn.commit() 
     #     conn.close()

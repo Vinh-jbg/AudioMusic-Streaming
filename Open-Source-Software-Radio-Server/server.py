@@ -60,7 +60,9 @@ def upload_file():
                     "artists": data[4]  # Giả sử cơ sở dữ liệu đã được cập nhật để lưu trữ thông tin nghệ sĩ
                 }
                 return jsonify(res)
+            
         
+    
             
             return Response("Oh No ! Exception :(((", status=400, mimetype='application/json')
         except Exception as e:
@@ -142,6 +144,48 @@ def get_photo(name):
 def list_songs():
     songs = store.getAll()
     return render_template('songs.html', songs=songs)
+@app.route("/update-music/<id>", methods=['POST'])
+def update_music(id):
+    if request.method == 'POST':
+        name = request.form['name']
+        artists = request.form['artists']
+        # Giả sử bạn không cho phép thay đổi image và path qua form
+        music = store.getMusicById(id)
+        if music:
+            store.update_music(id, name, music[0][2], music[0][3], artists)
+            return jsonify({"message": "Bài hát đã được cập nhật thành công!", 
+                            "id": id,
+                            "name": name,
+                            "image": music[0][2],
+                            "path": music[0][3],
+                            "artists": artists }), 200
+        else:
+            return "Song not found", 404
+   
+    return jsonify({"error": str(e)}), 500
+@app.route("/add-music", methods=['POST'])
+def add_music():
+    if request.method == 'POST':
+        try:
+            file_to_upload = request.files.get('file')
+            image = request.files.get('image')
+            name = request.form.get('name')
+            artists = request.form.get('artists')
+            if file_to_upload and image and name and artists:
+                now = str(datetime.now().timestamp())
+                radio_name = now + os.path.splitext(file_to_upload.filename)[1]
+                image_name = now + os.path.splitext(image.filename)[1]
+                file_to_upload.save(os.path.join(app.config['UPLOAD_RADIO_DIR'], radio_name))
+                image.save(os.path.join(app.config['UPLOAD_IMAGE_DIR'], image_name))
+                
+                store.add_music(name=name, image=image_name, path=radio_name, artists=artists)
+                
+                return jsonify({"message": "Music added successfully"}), 200
+            else:
+                return jsonify({"error": "Missing data"}), 400
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        
 # @app.route("/get-all-artists", methods=['GET'])
 # def get_all_artists():
 #     data = store.getAll_artists()

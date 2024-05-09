@@ -19,15 +19,141 @@
         </thead>
         <tbody>
             {% for song in songs %}
-            <tr>
+            <tr id="songRow-{{ song[0] }}">
                 <td>{{ song[0] }}</td>
-                <td>{{ song[1] }}</td>
-                <td><img src="{{ url_for('get_photo', name=song[2]) }}" height="100"></td>
-                <td>{{ song[3] }}</td>
-                <td>{{ song[4] }}</td>
+                <td id="songName-{{ song[0] }}">{{ song[1] }}</td>
+                <td><img id="songImage-{{ song[0] }}" src="{{ url_for('get_photo', name=song[2]) }}" height="100"></td>
+                <td id="songPath-{{ song[0] }}">{{ song[3] }}</td>
+                <td id="songArtists-{{ song[0] }}">{{ song[4] }}</td>
+                <td>
+                    <!-- Nút hiển thị form sửa -->
+                    <button onclick="showEditForm('{{ song[0] }}')">Edit</button>
+                    <!-- Form sửa bài hát (ẩn ban đầu) -->
+                    <form id="editForm-{{ song[0] }}" style="display: none;" onsubmit="return submitEditForm(event, '{{ song[0] }}');">
+                        <input type="text" name="name" value="{{ song[1] }}" required>
+                        <input type="text" name="artists" value="{{ song[4] }}" required>
+                        <!-- Các trường khác -->
+                        <input type="submit" value="Update">
+                    </form>
+                </td>
+                <td>
+                    <button onclick="deleteSong('{{ song[0] }}')">Xóa</button>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <h2>Add a new song</h2>
+    <form id="addSongForm" method="POST" action="/add-music" enctype="multipart/form-data">
+    <label for="name">Song Name:</label><br>
+    <input type="text" id="name" name="name" required><br>
+    <label for="artists">Artists:</label><br>
+    <input type="text" id="artists" name="artists" required><br>
+    <label for="file">Song File:</label><br>
+    <input type="file" id="file" name="file" required><br>
+    <label for="image">Image:</label><br>
+    <input type="file" id="image" name="image"><br>
+    <input type="submit" value="Add Song">
+</form>
 </body>
 </html>
+<script>
+    document.getElementById('addSongForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    var formData = new FormData(this);
+
+    fetch('/add-music', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.id) { // Giả sử phản hồi trả về dữ liệu của bài hát mới được thêm
+            alert("Song added successfully!");
+            // Cập nhật danh sách bài hát
+            addSongToTable(data);
+        } else if (data.error) {
+            alert("An error occurred: " + data.error);
+        }
+    })
+    .catch(error => {
+        alert("An error occurred while adding the song.");
+    });
+});
+
+  function addSongToTable(song) {
+    const table = document.querySelector('table tbody');
+    const row = document.createElement('tr');
+    row.id = `songRow-${song.id}`;
+    row.innerHTML = `
+            <td>${song.id}</td>
+            <td id="songName-${song.id}">${song.name}</td>
+            <td><img id="songImage-${song.id}" src="${song.image}" height="100"></td>
+            <td id="songPath-${song.id}">${song.path}</td>
+            <td id="songArtists-${song.id}">${song.artists}</td>
+            <td>
+                <button onclick="showEditForm('${song.id}')">Edit</button>
+                <form id="editForm-${song.id}" style="display: none;" onsubmit="return submitEditForm(event, '${song.id}');">
+                    <input type="text" name="name" value="${song.name}" required>
+                    <input type="text" name="artists" value="${song.artists}" required>
+                    <input type="submit" value="Update">
+                </form>
+                <button onclick="deleteSong('${song.id}')">Delete</button>
+            </td>
+        `;
+    table.appendChild(row);
+}
+    function showEditForm(id) {
+        var form = document.getElementById('editForm-' + id);
+        form.style.display = 'block';
+    }
+
+    function submitEditForm(event, id) {
+        event.preventDefault(); // Ngăn chặn hành động mặc định của form
+        var form = document.getElementById('editForm-' + id);
+        var formData = new FormData(form);
+
+        fetch('/update-music/' + id, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert("Bài hát đã được cập nhật thành công!");
+                document.querySelector(`#songName-${id}`).textContent = formData.get('name');
+                document.querySelector(`#songArtists-${id}`).textContent = formData.get('artists');
+                form.style.display = 'none';
+            } else if (data.error) {
+                alert("Có lỗi xảy ra: " + data.error);
+            }
+        })
+        .catch(error => {
+            alert("Đã có lỗi xảy ra khi cập nhật bài hát.");
+        });
+
+        return false; // Trả về false để ngăn chặn tải lại trang
+    }
+    function deleteSong(id){
+        if(confirm("Bạn có chắc muốn xóa bài hát này không?")){
+            fetch('/delete-music/' +id,{
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data =>{
+                if(data.message){
+                    alert("Bài hát đã được xóa thành công");
+                    //Xóa bài hát khỏi giao diện
+                    var songRow = document.getElementById('songRow-' + id);
+                    songRow.parentNode.removeChild(songRow);
+                }
+                else if(data.error){
+                    alert("Có lỗi xảy ra:"+data.error);
+                }
+            })
+            .catch(error =>{
+                alert("Đã có lỗi xảy ra khi xóa bài hát.");
+            });
+        }
+    }
+</script>
