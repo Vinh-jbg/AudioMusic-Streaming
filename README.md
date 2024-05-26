@@ -19,7 +19,7 @@ To install the project, follow these steps:
    ```
    pip install -r requirements.txt
    ```
-# Requirement
+## Requirement
 	PgAdmin 4
 	Visual Studio Code (VS Code)
 	Setup Python to VS Code
@@ -54,9 +54,9 @@ To set up a development environment, follow these steps:
 ## Downloading the Project
 To download the project, simply clone the repository to your local machine using the following command:
 ```
-git clone https://github.com/yourusername/project-name.git
+git clone https://github.com/yourusername/project-name.git 
 
-## Run
+##  Run
 To run the application you need to download the libraries with the command: pip install -r requirements.txt start: python server.py
 ## License
 
